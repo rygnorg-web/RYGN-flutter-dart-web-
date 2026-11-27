@@ -1,0 +1,318 @@
+{
+  "entities": {
+    "CmsPublishedItem": {
+      "title": "CmsPublishedItem",
+      "description": "Published centralized CMS content item (text, image, banner, or logo) visible to public users.",
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "description": "Unique registry content ID (e.g., home_page_title)",
+          "minLength": 2,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "pageId": {
+          "type": "string",
+          "description": "Target page identifier",
+          "enum": ["global", "home", "donate", "mission", "leadership", "youth_education", "humanitarian_relief", "navigation"]
+        },
+        "sectionId": {
+          "type": "string",
+          "description": "Section identifier within the page",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "contentType": {
+          "type": "string",
+          "description": "Type of editable content",
+          "enum": ["text", "image", "logo", "banner"]
+        },
+        "value": {
+          "type": "string",
+          "description": "Published text or image/logo URL/data URL",
+          "minLength": 1,
+          "maxLength": 750000
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Marks published item as safe for public read queries"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Firebase Auth UID of the verified admin who published this item",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedByEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified email of the admin who published this item",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of publication"
+        }
+      },
+      "required": ["itemId", "pageId", "sectionId", "contentType", "value", "isPublic", "updatedBy", "updatedByEmail", "updatedAt"]
+    },
+    "CmsDraftItem": {
+      "title": "CmsDraftItem",
+      "description": "Unpublished draft content item accessible only to verified admins.",
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "pageId": {
+          "type": "string",
+          "enum": ["global", "home", "donate", "mission", "leadership", "youth_education", "humanitarian_relief", "navigation"]
+        },
+        "sectionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "contentType": {
+          "type": "string",
+          "enum": ["text", "image", "logo", "banner"]
+        },
+        "draftValue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 750000
+        },
+        "updatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedByEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["itemId", "pageId", "sectionId", "contentType", "draftValue", "updatedBy", "updatedByEmail", "updatedAt"]
+    },
+    "CmsHistoryEntry": {
+      "title": "CmsHistoryEntry",
+      "description": "Audit trail entry for CMS draft, publish, and restore actions.",
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "pageId": {
+          "type": "string",
+          "enum": ["global", "home", "donate", "mission", "leadership", "youth_education", "humanitarian_relief", "navigation"]
+        },
+        "sectionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "contentType": {
+          "type": "string",
+          "enum": ["text", "image", "logo", "banner"]
+        },
+        "action": {
+          "type": "string",
+          "enum": ["draft", "publish", "restore"]
+        },
+        "previousValue": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 750000
+        },
+        "newValue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 750000
+        },
+        "updatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedByEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["itemId", "pageId", "sectionId", "contentType", "action", "previousValue", "newValue", "updatedBy", "updatedByEmail", "createdAt"]
+    },
+    "SiteHeroConfig": {
+      "title": "SiteHeroConfig",
+      "description": "Legacy RYGN image configuration updated by verified admins.",
+      "type": "object",
+      "properties": {
+        "imageUrl": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 750000,
+          "pattern": "^(https://[^\\s]+|data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+)$"
+        },
+        "updatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["imageUrl", "updatedBy", "updatedAt"]
+    },
+    "PageTextContent": {
+      "title": "PageTextContent",
+      "description": "Legacy page text documents.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 1000 },
+        "aboutTitle": { "type": "string", "maxLength": 500 },
+        "aboutContent": { "type": "string", "maxLength": 15000 },
+        "mainParagraph": { "type": "string", "maxLength": 25000 },
+        "reportsHeading": { "type": "string", "maxLength": 500 },
+        "storyText": { "type": "string", "maxLength": 25000 },
+        "updatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["updatedBy", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Explicit admin role document keyed by Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "grantedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "grantedBy", "createdAt"]
+    },
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "Private user simulator preferences isolated per authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "fontScale": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "country", "fontScale", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/cms_published/{itemId}": {
+      "schema": {
+        "$ref": "#/entities/CmsPublishedItem"
+      },
+      "description": "Centralized published content items. Public read (isPublic == true); verified admin write."
+    },
+    "/cms_drafts/{itemId}": {
+      "schema": {
+        "$ref": "#/entities/CmsDraftItem"
+      },
+      "description": "Private draft content items. Verified admin read/write only."
+    },
+    "/cms_history/{historyId}": {
+      "schema": {
+        "$ref": "#/entities/CmsHistoryEntry"
+      },
+      "description": "Admin audit trail and restore snapshots. Verified admin read/create only."
+    },
+    "/site_config/{configId}": {
+      "schema": {
+        "$ref": "#/entities/SiteHeroConfig"
+      },
+      "description": "Legacy image documents ('hero', 'donate', 'mission', 'leadership')."
+    },
+    "/page_texts/{pageId}": {
+      "schema": {
+        "$ref": "#/entities/PageTextContent"
+      },
+      "description": "Legacy text documents ('home', 'donate', 'mission', 'leadership')."
+    },
+    "/admins/{adminUid}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Admin role directory."
+    },
+    "/users/{userId}/preferences/{prefId}": {
+      "schema": {
+        "$ref": "#/entities/UserPreferences"
+      },
+      "description": "User preferences."
+    }
+  }
+}

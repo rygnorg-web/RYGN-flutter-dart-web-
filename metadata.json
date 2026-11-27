@@ -1,0 +1,6 @@
+{
+  "name": "Rohingya Young Generation Network (RYGN)",
+  "description": "Rohingya Young Generation Network (RYGN) is a youth-led community organization supporting Rohingya youth through education, human rights advocacy, emergency relief, and capacity building.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@keyframes rygn-heart-react {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    filter: drop-shadow(0 0 0 rgba(255, 214, 0, 0));
+  }
+  14% {
+    transform: scale(1.26) translateY(-1px) rotate(-6deg);
+    filter: drop-shadow(0 0 6px rgba(255, 214, 0, 0.55));
+  }
+  28% {
+    transform: scale(1.02) translateY(0) rotate(0deg);
+    filter: drop-shadow(0 0 1px rgba(255, 214, 0, 0.2));
+  }
+  42% {
+    transform: scale(1.2) translateY(-1px) rotate(5deg);
+    filter: drop-shadow(0 0 5px rgba(255, 214, 0, 0.45));
+  }
+  58% {
+    transform: scale(1) translateY(0) rotate(0deg);
+    filter: drop-shadow(0 0 0 rgba(255, 214, 0, 0));
+  }
+}
+
+.animate-heart-react {
+  display: inline-block;
+  transform-origin: center;
+  animation: rygn-heart-react 1.9s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-heart-react {
+    animation: none;
+  }
+}
+
+/* Accessibility Panel Themes (scoped strictly to RYGN app viewport content) */
+.rygn-high-contrast {
+  filter: contrast(1.28) saturate(1.08);
+}
+
+.rygn-night-mode,
+.rygn-night-mode .bg-white,
+.rygn-night-mode .bg-\[\#FAFAF8\],
+.rygn-night-mode .bg-slate-50,
+.rygn-night-mode .bg-slate-100 {
+  background-color: #0F172A !important;
+  color: #F1F5F9 !important;
+}
+
+.rygn-night-mode .bg-emerald-50\/60,
+.rygn-night-mode .bg-amber-50\/70 {
+  background-color: #1E293B !important;
+}
+
+.rygn-night-mode .text-slate-950,
+.rygn-night-mode .text-slate-900,
+.rygn-night-mode .text-slate-800,
+.rygn-night-mode .text-slate-700,
+.rygn-night-mode .text-\[\#3A3A3A\],
+.rygn-night-mode .text-\[\#4A4A4A\] {
+  color: #F1F5F9 !important;
+}
+
+.rygn-night-mode .text-slate-600,
+.rygn-night-mode .text-slate-500 {
+  color: #CBD5E1 !important;
+}
+
+.rygn-night-mode .text-\[\#0D5B36\] {
+  color: #34D399 !important;
+}
+
+.rygn-night-mode .border-slate-100,
+.rygn-night-mode .border-slate-200,
+.rygn-night-mode .border-slate-300,
+.rygn-night-mode .border-slate-950 {
+  border-color: #334155 !important;
+}
+
+.rygn-night-mode .bg-\[\#FFD600\],
+.rygn-night-mode .bg-\[\#FFD600\] *,
+.rygn-night-mode .bg-slate-950 .text-\[\#FFD600\] {
+  color: #0F172A !important;
+}
+
+.rygn-night-mode .bg-\[\#0F0F0F\],
+.rygn-night-mode .bg-\[\#0F0F0F\] * {
+  background-color: #1E293B !important;
+  color: #FFFFFF !important;
+}
+
+.rygn-night-mode .bg-\[\#0F0F0F\] .text-\[\#FFD600\],
+.rygn-night-mode .bg-\[\#0F0F0F\] .animate-heart-react {
+  color: #FFD600 !important;
+}
+
+/* Temporary Cinematic Welcome Intro Animations (Compositor-Only) */
+@keyframes rygn-cloud-drift-left {
+  0% {
+    transform: translate3d(-4%, 0, 0) scale(1.04);
+    opacity: 0.48;
+  }
+  50% {
+    transform: translate3d(3%, -1.5%, 0) scale(1.08);
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate3d(7%, 0, 0) scale(1.05);
+    opacity: 0.28;
+  }
+}
+
+@keyframes rygn-cloud-drift-right {
+  0% {
+    transform: translate3d(5%, 0, 0) scale(1.05);
+    opacity: 0.36;
+  }
+  50% {
+    transform: translate3d(-2%, 1%, 0) scale(1.09);
+    opacity: 0.52;
+  }
+  100% {
+    transform: translate3d(-7%, 0, 0) scale(1.04);
+    opacity: 0.22;
+  }
+}
+
+@keyframes rygn-camp-zoom {
+  0% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.0) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes rygn-intro-line {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.rygn-cloud-layer-1 {
+  animation: rygn-cloud-drift-left 8.1s ease-in-out forwards;
+  will-change: transform, opacity;
+}
+
+.rygn-cloud-layer-2 {
+  animation: rygn-cloud-drift-right 8.1s ease-in-out forwards;
+  will-change: transform, opacity;
+}
+
+.rygn-camp-kenburns {
+  animation: rygn-camp-zoom 7.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform;
+}
+
+.rygn-intro-progress-bar {
+  transform-origin: left center;
+  animation: rygn-intro-line 7s linear forwards;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rygn-cloud-layer-1,
+  .rygn-cloud-layer-2,
+  .rygn-camp-kenburns,
+  .rygn-intro-progress-bar {
+    animation: none !important;
+  }
+}

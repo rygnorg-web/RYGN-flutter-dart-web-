@@ -1,0 +1,358 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Phase 3: Global Security & Identity Primitives
+    // =========================================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerified() && request.auth.token.email == 'rygnorg@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // =========================================================================
+    // Phase 2: Validation Blueprints (Anti-Update-Gap)
+    // =========================================================================
+    function isValidHeroImageUrl(url) {
+      return url is string
+        && url.size() >= 10
+        && url.size() <= 750000
+        && (
+          url.matches('^https://[^\\s]+$')
+          || url.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        );
+    }
+
+    function isValidPageId(pageId) {
+      return pageId in ['global', 'home', 'donate', 'mission', 'leadership', 'youth_education', 'humanitarian_relief', 'navigation'];
+    }
+
+    function isValidContentType(contentType) {
+      return contentType in ['text', 'image', 'logo', 'banner'];
+    }
+
+    function isValidCmsValue(contentType, val) {
+      return val is string && (
+        (contentType == 'text' && val.size() >= 1 && val.size() <= 100000) ||
+        (contentType in ['image', 'logo', 'banner'] && isValidHeroImageUrl(val))
+      );
+    }
+
+    function isValidCmsPublishedItem(data, expectedItemId) {
+      return data.keys().hasAll(['itemId', 'pageId', 'sectionId', 'contentType', 'value', 'isPublic', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && data.keys().hasOnly(['itemId', 'pageId', 'sectionId', 'contentType', 'value', 'isPublic', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && isValidId(data.itemId)
+        && data.itemId == expectedItemId
+        && isValidPageId(data.pageId)
+        && isValidId(data.sectionId)
+        && data.sectionId.size() <= 64
+        && isValidContentType(data.contentType)
+        && isValidCmsValue(data.contentType, data.value)
+        && data.isPublic is bool
+        && data.isPublic == true
+        && isValidId(data.updatedBy)
+        && data.updatedBy == request.auth.uid
+        && data.updatedByEmail is string
+        && data.updatedByEmail.size() >= 5
+        && data.updatedByEmail.size() <= 254
+        && data.updatedByEmail == request.auth.token.email
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidCmsDraftItem(data, expectedItemId) {
+      return data.keys().hasAll(['itemId', 'pageId', 'sectionId', 'contentType', 'draftValue', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && data.keys().hasOnly(['itemId', 'pageId', 'sectionId', 'contentType', 'draftValue', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && isValidId(data.itemId)
+        && data.itemId == expectedItemId
+        && isValidPageId(data.pageId)
+        && isValidId(data.sectionId)
+        && data.sectionId.size() <= 64
+        && isValidContentType(data.contentType)
+        && isValidCmsValue(data.contentType, data.draftValue)
+        && isValidId(data.updatedBy)
+        && data.updatedBy == request.auth.uid
+        && data.updatedByEmail is string
+        && data.updatedByEmail.size() >= 5
+        && data.updatedByEmail.size() <= 254
+        && data.updatedByEmail == request.auth.token.email
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidCmsHistoryEntry(data) {
+      return data.keys().hasAll(['itemId', 'pageId', 'sectionId', 'contentType', 'action', 'previousValue', 'newValue', 'updatedBy', 'updatedByEmail', 'createdAt'])
+        && data.keys().hasOnly(['itemId', 'pageId', 'sectionId', 'contentType', 'action', 'previousValue', 'newValue', 'updatedBy', 'updatedByEmail', 'createdAt'])
+        && isValidId(data.itemId)
+        && isValidPageId(data.pageId)
+        && isValidId(data.sectionId)
+        && data.sectionId.size() <= 64
+        && isValidContentType(data.contentType)
+        && data.action in ['draft', 'publish', 'restore']
+        && data.previousValue is string
+        && data.previousValue.size() <= 750000
+        && isValidCmsValue(data.contentType, data.newValue)
+        && isValidId(data.updatedBy)
+        && data.updatedBy == request.auth.uid
+        && data.updatedByEmail is string
+        && data.updatedByEmail.size() >= 5
+        && data.updatedByEmail.size() <= 254
+        && data.updatedByEmail == request.auth.token.email
+        && data.createdAt is timestamp
+        && data.createdAt == request.time;
+    }
+
+    function isValidSiteHeroConfig(data) {
+      return data.keys().hasAll(['imageUrl', 'updatedBy', 'updatedAt'])
+        && data.keys().hasOnly(['imageUrl', 'updatedBy', 'updatedAt'])
+        && isValidHeroImageUrl(data.imageUrl)
+        && isValidId(data.updatedBy)
+        && data.updatedBy == request.auth.uid
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidPageTextConfig(data) {
+      return data.keys().hasAll(['updatedBy', 'updatedAt'])
+        && data.keys().hasOnly(['title', 'aboutTitle', 'aboutContent', 'mainParagraph', 'reportsHeading', 'storyText', 'updatedBy', 'updatedAt'])
+        && (!('title' in data) || (data.title is string && data.title.size() <= 1000))
+        && (!('aboutTitle' in data) || (data.aboutTitle is string && data.aboutTitle.size() <= 500))
+        && (!('aboutContent' in data) || (data.aboutContent is string && data.aboutContent.size() <= 15000))
+        && (!('mainParagraph' in data) || (data.mainParagraph is string && data.mainParagraph.size() <= 25000))
+        && (!('reportsHeading' in data) || (data.reportsHeading is string && data.reportsHeading.size() <= 500))
+        && (!('storyText' in data) || (data.storyText is string && data.storyText.size() <= 25000))
+        && isValidId(data.updatedBy)
+        && data.updatedBy == request.auth.uid
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['email', 'grantedBy', 'createdAt'])
+        && data.keys().hasOnly(['email', 'grantedBy', 'createdAt'])
+        && data.email is string
+        && data.email.size() >= 5
+        && data.email.size() <= 254
+        && data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && isValidId(data.grantedBy)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidUserPreferences(data, expectedOwnerId) {
+      return data.keys().hasAll(['ownerId', 'country', 'fontScale', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'country', 'fontScale', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerId)
+        && data.ownerId == expectedOwnerId
+        && data.ownerId == request.auth.uid
+        && data.country is string
+        && data.country.size() >= 2
+        && data.country.size() <= 80
+        && data.fontScale is number
+        && data.fontScale >= 0.8
+        && data.fontScale <= 1.5
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    // =========================================================================
+    // Collection: /cms_published/{itemId} (Public reads; verified admin writes)
+    // =========================================================================
+    match /cms_published/{itemId} {
+      allow get: if isValidId(itemId) && resource.data.isPublic == true;
+      allow list: if resource.data.isPublic == true;
+
+      allow create: if isVerified()
+        && isValidId(itemId)
+        && isValidCmsPublishedItem(incoming(), itemId)
+        && isAdmin();
+
+      allow update: if isVerified()
+        && isValidId(itemId)
+        && isValidCmsPublishedItem(incoming(), itemId)
+        && incoming().itemId == existing().itemId
+        && incoming().pageId == existing().pageId
+        && incoming().sectionId == existing().sectionId
+        && incoming().contentType == existing().contentType
+        && incoming().diff(existing()).affectedKeys().hasOnly(['value', 'isPublic', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && isAdmin();
+
+      allow delete: if isVerified()
+        && isValidId(itemId)
+        && isAdmin();
+    }
+
+    // =========================================================================
+    // Collection: /cms_drafts/{itemId} (Admin-only drafts, zero public access)
+    // =========================================================================
+    match /cms_drafts/{itemId} {
+      allow get: if isValidId(itemId) && isAdmin();
+      allow list: if false;
+
+      allow create: if isVerified()
+        && isValidId(itemId)
+        && isValidCmsDraftItem(incoming(), itemId)
+        && isAdmin();
+
+      allow update: if isVerified()
+        && isValidId(itemId)
+        && isValidCmsDraftItem(incoming(), itemId)
+        && incoming().itemId == existing().itemId
+        && incoming().pageId == existing().pageId
+        && incoming().sectionId == existing().sectionId
+        && incoming().contentType == existing().contentType
+        && incoming().diff(existing()).affectedKeys().hasOnly(['draftValue', 'updatedBy', 'updatedByEmail', 'updatedAt'])
+        && isAdmin();
+
+      allow delete: if isValidId(itemId) && isAdmin();
+    }
+
+    // =========================================================================
+    // Collection: /cms_history/{historyId} (Admin-only immutable audit log)
+    // =========================================================================
+    match /cms_history/{historyId} {
+      allow get: if isValidId(historyId) && isAdmin();
+      allow list: if isVerified() && (isBootstrappedAdmin() || resource.data.updatedBy == request.auth.uid);
+
+      allow create: if isVerified()
+        && isValidId(historyId)
+        && isValidCmsHistoryEntry(incoming())
+        && isAdmin();
+
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // Collection: /site_config/{configId} (Legacy image storage fallback)
+    // =========================================================================
+    match /site_config/{configId} {
+      allow get: if isValidId(configId) && (configId == 'hero' || configId == 'donate' || configId == 'mission' || configId == 'leadership');
+      allow list: if false;
+
+      allow create: if isVerified()
+        && isValidId(configId)
+        && (configId == 'hero' || configId == 'donate' || configId == 'mission' || configId == 'leadership')
+        && isValidSiteHeroConfig(incoming())
+        && isAdmin();
+
+      allow update: if isVerified()
+        && isValidId(configId)
+        && (configId == 'hero' || configId == 'donate' || configId == 'mission' || configId == 'leadership')
+        && isValidSiteHeroConfig(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['imageUrl', 'updatedBy', 'updatedAt'])
+        && isAdmin();
+
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Collection: /page_texts/{pageId} (Legacy text storage fallback)
+    // =========================================================================
+    match /page_texts/{pageId} {
+      allow get: if isValidId(pageId) && (pageId == 'home' || pageId == 'donate' || pageId == 'mission' || pageId == 'leadership');
+      allow list: if false;
+
+      allow create: if isVerified()
+        && isValidId(pageId)
+        && (pageId == 'home' || pageId == 'donate' || pageId == 'mission' || pageId == 'leadership')
+        && isValidPageTextConfig(incoming())
+        && isAdmin();
+
+      allow update: if isVerified()
+        && isValidId(pageId)
+        && (pageId == 'home' || pageId == 'donate' || pageId == 'mission' || pageId == 'leadership')
+        && isValidPageTextConfig(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'aboutTitle', 'aboutContent', 'mainParagraph', 'reportsHeading', 'storyText', 'updatedBy', 'updatedAt'])
+        && isAdmin();
+
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Collection: /admins/{adminUid} (PII isolated to self & admins)
+    // =========================================================================
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && (isOwner(adminUid) || isAdmin());
+      allow list: if isBootstrappedAdmin();
+
+      allow create: if isVerified()
+        && isValidId(adminUid)
+        && isValidAdminRecord(incoming())
+        && incoming().grantedBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+
+      allow update: if isVerified()
+        && isValidId(adminUid)
+        && isValidAdminRecord(incoming())
+        && incoming().grantedBy == existing().grantedBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email'])
+        && isAdmin();
+
+      allow delete: if isVerified()
+        && isValidId(adminUid)
+        && isAdmin()
+        && adminUid != request.auth.uid;
+    }
+
+    // =========================================================================
+    // Collection: /users/{userId}/preferences/{prefId}
+    // =========================================================================
+    match /users/{userId}/preferences/{prefId} {
+      allow get: if isValidId(userId) && isValidId(prefId) && isOwner(userId);
+      allow list: if isValidId(userId) && isOwner(userId) && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isVerified()
+        && isValidId(userId)
+        && isValidId(prefId)
+        && isValidUserPreferences(incoming(), userId)
+        && incoming().createdAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(userId)
+        && isValidId(prefId)
+        && isValidUserPreferences(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['country', 'fontScale', 'updatedAt']);
+
+      allow delete: if isValidId(userId) && isValidId(prefId) && isOwner(userId);
+    }
+  }
+}
